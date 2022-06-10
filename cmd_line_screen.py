@@ -73,7 +73,7 @@ class ANSI:
     }
 
 
-def color_replace(num_line, mono=False):      # replaces all the numbers on a line by the respective ANSI colors
+def color_replace(num_line, mono=False):  # replaces all the numbers on a line by the respective ANSI colors
     line = []
     for num in num_line:
         if mono:
@@ -135,7 +135,9 @@ class GPU:
     def draw_v_line(self, xa, ya, yb, color=1):
         if self.display.inside_screen(xa, ya) and self.display.inside_screen(xa, yb):
             if ya > yb:
-                tmp = ya; ya = yb; yb = tmp
+                tmp = ya
+                ya = yb
+                yb = tmp
             for i in range(ya, yb + 1):
                 self.display.screen[i][xa] = color
         return
@@ -145,7 +147,6 @@ class GPU:
         dy = yb - ya
         self.set_pixel(xa, ya, color)
         self.set_pixel(xb, yb, color)
-        switched = False
         if dx < abs(dy) and abs(dx) > dy:
             dx = -dx
             dy = -dy
@@ -193,7 +194,7 @@ class GPU:
 
     def draw_circle(self, xa, ya, r, fill=False, color=1):
         r_sq = r * r
-        mid = round(r * 0.75)   # should be using cos(pi/4) or ~0.7071
+        mid = round(r * 0.75)  # should be using cos(pi/4) or ~0.7071
         difference = 0
         adding = 1
         x = 0
@@ -238,7 +239,7 @@ class GPU:
             self.draw_h_line(xa, yb, xb)
         return
 
-    def draw_triangle(self, xa, ya, xb, yb, xc, yc, fill=False, color=1):    # fill not implemented yet
+    def draw_triangle(self, xa, ya, xb, yb, xc, yc, fill=False, color=1):  # fill not implemented yet
         if fill:
             pass
         else:
@@ -262,20 +263,20 @@ class GPU:
         sprite = []
         for i in range(height):
             for j in range(width):
-                sprite.append((j + (i * height), self.display.screen[i][j]))
+                sprite.append((j + (i * height), self.display.screen[y + i][x + j]))
 
         return Sprite(width, height, sprite)
 
 
 class Sprite:
-    def __init__(self, width, height, args: list):   # each arg is tuple: (position, color_num)
+    def __init__(self, width, height, args: list):  # each arg is tuple: (position, color_num)
         self.width = width
         self.height = height
         self.data = []
         for element in args:
-            if len(element) == 1:       # was created with mono
+            if len(element) == 1:  # was created with mono
                 self.data.append((element[0], 1))
-            elif len(element) == 2:
+            elif len(element) == 2 and element[1] != 0:  # avoiding storing transparent pixels
                 self.data.append(element)
         return
 
@@ -302,15 +303,56 @@ class Sprite:
         return 0 <= x < self.width and 0 <= y < self.height
 
     def transpose(self):
+        output = []
+        for pix in self.data:
+            x = pix[0] % self.width
+            y = pix[0] // self.height
+            num = y + x * self.width
+            output.append((num, pix[1]))
+        return Sprite(self.height, self.width, output)
 
-        return
+    def rotate_sq_ccw(self):   # +90 degrees, only works with square sprites
+        constant = (self.width - 1) * self.height
+        pixels = []
+        for pix in self.data:
+            x = pix[0] % self.width
+            y = pix[0] // self.height
+            pixels.append((constant + y - (x * self.width), pix[1]))
+
+        return Sprite(self.width, self.height, pixels)
+
+    def rotate_sq_cw(self):    # -90 degrees, only works with square sprites
+        constant = self.width - 1
+        pixels = []
+        for pix in self.data:
+            x = pix[0] % self.width
+            y = pix[0] // self.height
+            pixels.append((constant - y + (x * self.width), pix[1]))
+
+        return Sprite(self.width, self.height, pixels)
+
+    def rotate_ccw(self):
+        return self.transpose().mirror_v()
+
+    def rotate_cw(self):
+        return self.transpose().mirror_h()
+
+    def mirror_v(self):
+
+        return  # TODO
+
+    def mirror_h(self):
+
+        return # TODO
 
     def __copy__(self):
-        return Sprite(self.width, self.height, self.data)
+        return Sprite(self.width, self.height, self.data.copy())
 
     def is_empty(self):
-
-        return
+        for pix in self.data:
+            if pix[1] != 0:
+                return False
+        return True
 
     def bin_op_setup(self, other):
         set1 = set()
@@ -323,22 +365,22 @@ class Sprite:
 
         return set1, set2
 
-    def __or__(self, other):    # other will have color priority
-        if self.height != other.height or self.width != other.width:    # assuming both sprites have the same size
+    def __or__(self, other):  # other will have color priority
+        if self.height != other.height or self.width != other.width:  # assuming both sprites have the same size
             return
         set1, set2 = self.bin_op_setup(other)
 
         return Sprite(self.width, self.height, list(set1 | set2))
 
     def __and__(self, other):
-        if self.height != other.height or self.width != other.width:    # assuming both sprites have the same size
+        if self.height != other.height or self.width != other.width:  # assuming both sprites have the same size
             return
         set1, set2 = self.bin_op_setup(other)
 
         return Sprite(self.width, self.height, list(set1 & set2))
 
     def __xor__(self, other):
-        if self.height != other.height or self.width != other.width:    # assuming both sprites have the same size
+        if self.height != other.height or self.width != other.width:  # assuming both sprites have the same size
             return
         set1, set2 = self.bin_op_setup(other)
 
@@ -355,7 +397,7 @@ class Sprite:
         return self & (~other)
 
     def __eq__(self, other):
-        return
+        return set(self.data) == set(other.data)
 
 
 def run(screen: Display, fps):
@@ -368,18 +410,19 @@ def run(screen: Display, fps):
             break
 
         # code here
-        # gpu.draw_circle(10, 18, 7, fill=False)
-        # gpu.draw_circle(10, 18, 4, fill=True)
+        gpu.draw_circle(10, 18, 7, fill=False)
+        gpu.draw_circle(10, 18, 4, fill=True)
 
-        # gpu.draw_rectangle(20, 12, 45, 25)
-        # gpu.draw_rectangle(23, 14, 40, 20, fill=True, color=2)
-        # gpu.draw_triangle(1, 1, 20, 12, 27, 5)
+        gpu.draw_rectangle(20, 12, 45, 25)
+        gpu.draw_rectangle(23, 14, 40, 20, fill=True, color=2)
+        gpu.draw_triangle(1, 1, 20, 12, 27, 5)
 
-        sprite = Sprite(2, 2, [(0, 1), (2, 2)])
+        sprite = Sprite(3, 3, [(0, 1), (3, 2), (6, 1)])
+        sprite2 = sprite.transpose()
         gpu.draw_sprite(5, 5, sprite)
+        gpu.draw_sprite(3, 3, sprite2)
 
-
-        log(ANSI.left.format(100))     # clear the user input
+        log(ANSI.left.format(100))  # clear the user input
         print(screen)
 
         # don't mess with the line below
@@ -390,7 +433,7 @@ def run(screen: Display, fps):
 
 
 def main():
-    screen = Display(48, 27)     # 80, 45   64, 36   48, 27   32, 18
+    screen = Display(48, 27)  # 80, 45   64, 36   48, 27   32, 18
     run(screen, 0.2)  # going faster than 5 fps will not be updated on the console
 
     return
