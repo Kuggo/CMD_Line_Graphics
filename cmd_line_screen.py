@@ -22,7 +22,8 @@ class ANSI:
     set_column = '\u001b[{n}G'
     set_position = '\u001b[{n};{m}H'
 
-    clear_all = '\u001b[2J'
+    clear_all = '\033[H\033[2J\033[3J'  # this one works like a charm
+    clear_all2 = '\u001b[2J'            # this one not so much
     clear_beginning = '\u001b[1J'
     clear_end = '\u001b[0J'
 
@@ -100,6 +101,12 @@ class Display:
         self.width = width
         self.height = height
         self.screen = matrix_init(width, height, 8)
+        return
+
+    def display(self):
+        log(ANSI.left.format(100))  # clear the user input
+        log(ANSI.clear_all)
+        print(self)
         return
 
     def __repr__(self, mono=False):

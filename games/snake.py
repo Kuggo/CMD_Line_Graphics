@@ -1,19 +1,15 @@
-import os
-import sys
 import time
 from random import randint
-
 import keyboard
 
-script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-sys.path.append(script_dir[:script_dir.rindex('/')])
-import cmd_line_screen as s     # this lines works fine
+import cmd_line_screen as s     # this line is meant to be used when running in the console
+# from ...CMD_Line_Graphics import cmd_line_screen    # this one to be used when running on pycharm
 
 
 def main():
     width = 48
     height = 27
-    fps = 4
+    fps = 10
     screen = s.Display(width, height)
     gpu = s.GPU(screen)
 
@@ -47,9 +43,7 @@ def main():
         body.append(next_pixel)
         gpu.draw_pixel(next_pixel)
 
-        s.log(s.ANSI.left.format(100))  # clear the user input
-        print('\n')
-        print(screen)
+        screen.display()
         # don't mess with the line below
         time.sleep(max(1. / fps - (time.time() - start), 0))
 
