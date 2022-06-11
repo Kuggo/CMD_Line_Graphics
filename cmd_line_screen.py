@@ -122,6 +122,16 @@ class GPU:
             self.display.screen[y][x] = color
         return
 
+    def draw_pixel(self, pix):
+        if isinstance(pix, int):
+            x = pix % self.display.width
+            y = pix // self.display.width
+            self.set_pixel(x, y)
+        elif pix is not None:
+            x = pix[0] % self.display.width
+            y = pix[0] // self.display.width
+            self.set_pixel(x, y, pix[1])
+
     def draw_h_line(self, xa, ya, xb, color=1):
         if self.display.inside_screen(xa, ya) and self.display.inside_screen(xb, ya):
             if xa > xb:
@@ -255,7 +265,7 @@ class GPU:
 
         for pix in sprite.data:
             x = pix[0] % width
-            y = pix[0] // height
+            y = pix[0] // width
             self.set_pixel(xa + x, ya + y, pix[1])
         return
 
@@ -290,7 +300,7 @@ class Sprite:
 
         for pix in self.data:
             x = pix[0] % self.width
-            y = pix[0] // self.height
+            y = pix[0] // self.width
             if self.in_bounds(x, y):
                 sprite[y][x] = pix[1]
 
@@ -306,7 +316,7 @@ class Sprite:
         output = []
         for pix in self.data:
             x = pix[0] % self.width
-            y = pix[0] // self.height
+            y = pix[0] // self.width
             num = y + x * self.width
             output.append((num, pix[1]))
         return Sprite(self.height, self.width, output)
@@ -316,7 +326,7 @@ class Sprite:
         pixels = []
         for pix in self.data:
             x = pix[0] % self.width
-            y = pix[0] // self.height
+            y = pix[0] // self.width
             pixels.append((constant + y - (x * self.width), pix[1]))
 
         return Sprite(self.width, self.height, pixels)
@@ -326,7 +336,7 @@ class Sprite:
         pixels = []
         for pix in self.data:
             x = pix[0] % self.width
-            y = pix[0] // self.height
+            y = pix[0] // self.width
             pixels.append((constant - y + (x * self.width), pix[1]))
 
         return Sprite(self.width, self.height, pixels)
@@ -343,7 +353,7 @@ class Sprite:
 
     def mirror_h(self):
 
-        return # TODO
+        return  # TODO
 
     def __copy__(self):
         return Sprite(self.width, self.height, self.data.copy())
