@@ -16,10 +16,10 @@ def main():
     # variables
     heading = 2     # direction head is facing by default
     body = [0, 1, 2, 3, 4]
-    apple = (generate_apple(width, height, body), 2)
-
+    apple = generate_apple(width, height, body)
+    apple_color = 2
     # setup drawing
-    gpu.draw_pixel(apple)
+    gpu.draw_pixel(apple, apple_color)
     for pix in body:
         gpu.draw_pixel(pix)
 
@@ -30,14 +30,14 @@ def main():
             break
         next_pixel, heading = key_listener(width, height, heading, body[-1])
 
-        if next_pixel == apple[0]:
-            apple = (generate_apple(width, height, body), 2)
-            gpu.draw_pixel(apple)
+        if next_pixel == apple:
+            apple = generate_apple(width, height, body)
+            gpu.draw_pixel(apple, apple_color)
 
         elif next_pixel in body:
             break   # game over
         else:
-            gpu.draw_pixel((body[0], 8))
+            gpu.draw_pixel(body[0], 8)
             body.pop(0)
 
         body.append(next_pixel)
